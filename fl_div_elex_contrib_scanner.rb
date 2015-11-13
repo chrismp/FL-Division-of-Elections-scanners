@@ -15,7 +15,7 @@ fl_doeDB = Sequel.connect(
 )
 
 fl_doeDB.create_table? :fl_cmpgn_contrib do
-	primary_key :id
+#	primary_key :id
 	Integer :elex_val, :null => false
 	String :election_value, :null => false
 	String :election_text, :null => false
@@ -38,9 +38,33 @@ fl_doeDB.create_table? :fl_cmpgn_contrib do
 	String :zip
 	String :occupation
 	String :inkind_description
-	index [:elex_val, :zip]
+#	index [:elex_val, :zip]
+	index [:elex_value, :zip, :candidate, :committee]
 end
 cmpgn_contrib = fl_doeDB[:fl_cmpgn_contrib]
+
+
+## Below code in MySQL should significant speed improvements. sequel gem does not appear to allow partitioning.
+
+# alter table fl_cmpgn_contrib partition by range (elex_val) (
+	# partition p1998 values less than (19990000),
+	# partition p1996 values less than (19970000),
+	# partition p2000 values less than (20010000),
+	# partition p2002 values less than (20030000),
+	# partition p2004 values less than (20050000),
+	# partition p2006 values less than (20070000),
+	# partition p2008 values less than (20090000),
+	# partition p2010 values less than (20110000),
+	# partition p2012 values less than (20130000),
+	# partition p2014 values less than (20150000),
+	# partition p2016 values less than (20170000),
+	# partition p2018 values less than (20190000),
+	# partition p2020 values less than (20210000),
+	# partition p2022 values less than (20230000),
+	# partition p2024 values less than (20250000),
+	# partition premainder values less than (2147483647)
+# );
+
 
 
 fl_doe_url = 'http://election.dos.state.fl.us/campaign-finance/contrib.asp'
@@ -73,7 +97,9 @@ election_option_arr.zip(election_name_arr){|election_value, election_text|
 				retry
 			end
 
-				doe_form = page.forms[1] # The form, in Mechanize object format
+#form changed; this no longer works				doe_form = page.forms[1] # The form, in Mechanize object format
+				doe_form = page.forms[0] # The form, in Mechanize object format
+				
 				doe_form[record_type] = letter_number  # This goes in the candidate "Last name" field. By default, "With candidate last name starts with" is checked off, so we search all candidates whose last name begins with this letter
 				doe_form['election'] = election_value # Search all elections in the DOE campaign finance database
 				doe_form['csort1'] = 'DAT' # Sort by earliest to latest contributions.
